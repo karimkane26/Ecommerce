@@ -2,29 +2,44 @@ import express from "express";
 import products from "./data/products.js";
 import dotenv from 'dotenv';
 import cors from 'cors';
-
+import connectDB from "./config/db.js";
+import productRoutes from './routes/productRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import {notFound,errorHandler} from "./middleware/errorMiddleware.js";
+import MongoStore from "connect-mongo";
+import session from "express-session";
 dotenv.config();
-
+connectDB();
+// Connect to MongoDB
 const PORT = process.env.PORT || 5000;
 const app = express();
-
-// Configuration de CORS pour autoriser les requêtes provenant de 'http://localhost:3000'
+app.use(express.json()); 
+app.use(express.urlencoded({extended: true}))
+app.use(
+  session({
+    secret: '123456', // Remplacez par une valeur sécurisée
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: 'mongodb+srv://lucidev97:passer123@jayma.vctqz.mongodb.net/?retryWrites=true&w=majority&appName=Jayma',
+      ttl: 14 * 24 * 60 * 60, // Délai d'expiration des sessions (14 jours)
+    }),
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7 jours
+      secure: false, // Si vous utilisez HTTPS, mettez ceci à true
+    },
+  })
+);
 app.use(cors({
-  origin: 'http://localhost:3000', // Autorise uniquement le frontend
-  credentials: true // Autorise l'envoi de cookies
+  origin: 'http://localhost:3000', // Allow requests from this origin
+  credentials: true // Allow credentials (e.g., cookies) to be sent
 }));
 
 app.get('/', (req, res) => {
   res.send('API is running ...');
 });
-
-app.get('/api/products', (req, res) => {
-  res.json(products);
-});
-
-app.get('/api/products/:id', (req, res) => {
-  const product = products.find((p) => p._id === req.params.id);
-  res.json(product);
-});
-
+app.use('/api/products',productRoutes);
+app.use('/api/users',userRoutes);
+app.use(notFound);
+app.use(errorHandler);
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
