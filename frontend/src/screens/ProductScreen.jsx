@@ -12,7 +12,6 @@ import {
 import Rating from "../components/Rating";
 import { useProductContext } from "../Contexts/ProductContext";
 import { useCartContext } from "../Contexts/CartContext";
-
 const ProductScreen = () => {
   const { id: productId } = useParams();
   const { productDetails, fetchProductDetails } = useProductContext();

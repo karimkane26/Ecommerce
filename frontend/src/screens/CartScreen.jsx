@@ -11,8 +11,7 @@ import {
 } from "react-bootstrap";
 import { FaTrash } from "react-icons/fa";
 import Message from "../components/Message";
-import { useCartContext } from "../Contexts/CartContext"; // Utilisation du contexte du panier
-
+import { useCartContext } from "../Contexts/CartContext";
 const CartScreen = () => {
   const navigate = useNavigate();
   const { cartItems, addToCart, removeFromCart } = useCartContext(); // Accès aux articles du panier et aux actions via le contexte

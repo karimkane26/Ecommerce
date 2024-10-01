@@ -12,7 +12,7 @@ const authUser = asyncHandler(async(req, res)=> {
   const user = await User.findOne({email});
   // on appelle la fonction qui compare les mots de pass ici
   if(user && (await user.matchPassword(password))){
-   generateToken(res, user._id)
+    const token = generateToken(res, user._id)
     res.json(
       {
         _id: user._id,
@@ -20,6 +20,7 @@ const authUser = asyncHandler(async(req, res)=> {
        email: user.email,
        password: user.password,
        isAdmin: user.isAdmin,
+       token,
       //  token
       }
     )
@@ -28,47 +29,42 @@ const authUser = asyncHandler(async(req, res)=> {
     res.status(401);
     throw new Error('Invalid email or password ');
   }
-    res.send('auth user ')
 });
 
 // @desc logout user / clear cookie
 // @route POST /api/users
 // access public
-const registerUser = asyncHandler(async(req, res)=> {
-  // throw new Error('Some error');
-  const{name,email,password} = req.body;
-  // on cherche l'existance d'une de ces valeurs
-  const userExists = await User.findOne({email});
+const registerUser = asyncHandler(async (req, res) => {
+  const { name, email, password } = req.body;
 
-  if(userExists) {
+  const userExists = await User.findOne({ email });
+
+  if (userExists) {
     res.status(400);
-    throw new Error('User already Exists')
+    throw new Error('User already exists');
   }
- 
+
   const user = await User.create({
     name,
     email,
-    password
+    password,
   });
 
-if(user) {
-    generateToken(res,user._id);
-    res.json(
-      {
-        _id: user._id,
-       name: user.name,
-       email: user.email,
-       password: user.password,
-       isAdmin: user.isAdmin,
-      //  token
-      });
-  }
-  else{
+  if (user) {
+    const token = generateToken(res, user._id); // Génère et renvoie le token
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      isAdmin: user.isAdmin,
+      token, // Inclure le token ici
+    });
+  } else {
     res.status(400);
-    throw new Error('Invalid user data ');
+    throw new Error('Invalid user data');
   }
-
 });
+
 
 // @desc logout user / clear cookie
 // @route POST /api/users/logout
