@@ -1,118 +1,60 @@
-// OrdersContext.js
-import React, { createContext, useContext, useState } from "react";
-import axios from "axios";
-import { useAuth } from "../Contexts/AuthContext";
+import React, { createContext, useState, useContext } from "react";
+import api from "../components/axios";
+import { toast } from "react-toastify";
 
+// Créer le contexte
 const OrdersContext = createContext();
 
+// Créer un hook pour utiliser ce contexte facilement
+export const useOrders = () => useContext(OrdersContext);
+
 export const OrdersProvider = ({ children }) => {
-  const [orderDetails, setOrderDetails] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [orderDetails, setOrderDetails] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const { token, userInfo, authLoading } = useAuth();
-
+  // Créer une nouvelle commande
   const createOrder = async (order) => {
-    console.log("userInfo dans OrdersContext :", userInfo);
-    if (authLoading) {
-      const message = "Authentification en cours. Veuillez patienter.";
-      setError(message);
-      console.error(message);
-      throw new Error(message);
-    }
-
-    if (!userInfo) {
-      const message = "Informations utilisateur manquantes.";
-      setError(message);
-      console.error(message);
-      throw new Error(message);
-    }
-
-    if (!userInfo._id) {
-      const message = "Identifiant utilisateur manquant.";
-      setError(message);
-      console.error(message);
-      throw new Error(message);
-    }
-
-    if (!token) {
-      const message = "Token manquant pour l'authentification.";
-      setError(message);
-      console.error(message);
-      throw new Error(message);
-    }
-
-    setLoading(true);
     try {
-      const { data } = await axios.post(
-        "http://localhost:5000/api/orders",
-        { ...order, userId: userInfo._id },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      console.log("Commande créée :", data);
-      setLoading(false);
+      setIsLoading(true);
+      const { data } = await api.post("/orders", order);
+      setIsLoading(false);
       return data;
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Erreur lors de la création de la commande";
-      setError(errorMessage);
-      console.error("Erreur lors de la requête API :", errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
+      setIsLoading(false);
+      setError(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+      toast.error(error.message);
+      throw error;
     }
   };
 
+  // Récupérer les détails d'une commande par son ID
   const getOrderDetails = async (orderId) => {
-    if (!token) {
-      setError("Token manquant pour l'authentification.");
-      return;
-    }
-
-    setLoading(true);
     try {
-      const { data } = await axios.get(
-        `http://localhost:5000/api/orders/${orderId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      setIsLoading(true);
+      const { data } = await api.get(`${"/orders"}/${orderId}`);
       setOrderDetails(data);
-      setLoading(false);
+      setIsLoading(false);
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Erreur lors de la récupération des détails de la commande";
-      setError(errorMessage);
-      console.error("Erreur lors de la requête API :", errorMessage);
-      setLoading(false);
+      setIsLoading(false);
+      setError(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+      toast.error(error.message);
     }
   };
 
   return (
     <OrdersContext.Provider
-      value={{
-        orderDetails,
-        loading,
-        error,
-        createOrder,
-        getOrderDetails,
-      }}
+      value={{ createOrder, getOrderDetails, orderDetails, isLoading, error }}
     >
       {children}
     </OrdersContext.Provider>
   );
-};
-
-export const useOrders = () => {
-  return useContext(OrdersContext);
 };

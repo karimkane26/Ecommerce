@@ -1,22 +1,14 @@
 // PlaceOrderScreen.js
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  Button,
-  Row,
-  Col,
-  ListGroup,
-  Image,
-  Card,
-  Spinner,
-} from "react-bootstrap";
+import { Button, Row, Col, ListGroup, Image, Card } from "react-bootstrap";
 import CheckoutSteps from "../components/CheckoutSteps";
+import { useOrders } from "../Contexts/OrdersContext";
+import Loader from "../components/Loader";
 import Message from "../components/Message";
 import { useCartContext } from "../Contexts/CartContext";
-import { useShippingContext } from "../Contexts/ShippingContext";
-import { usePaymentContext } from "../Contexts/PaymentContext";
-import { useOrders } from "../Contexts/OrdersContext";
-import { useAuth } from "../Contexts/AuthContext";
+import { useShippingContext } from "../Contexts/ShippingContext"; // Importation du ShippingContext
+import { usePaymentContext } from "../Contexts/PaymentContext"; // Importation du PaymentContext
 
 const PlaceOrderScreen = () => {
   const navigate = useNavigate();
@@ -28,91 +20,70 @@ const PlaceOrderScreen = () => {
     totalPrice,
     clearCartItems,
   } = useCartContext();
-  const { shippingAddress } = useShippingContext();
-  const { paymentMethod } = usePaymentContext();
-  const { userInfo, authLoading } = useAuth();
-  const { createOrder, loading, error } = useOrders();
-  const [isLoading, setIsLoading] = useState(false);
+  const { createOrder, isLoading, error } = useOrders();
+  const { shippingAddress } = useShippingContext(); // Récupération de l'adresse de livraison
+  const { paymentMethod } = usePaymentContext(); // Récupération de la méthode de paiement
 
-  useEffect(() => {
-    console.log("userInfo dans PlaceOrderScreen :", userInfo);
-    if (!shippingAddress?.address) {
-      navigate("/shipping");
-    } else if (!paymentMethod) {
-      navigate("/payment");
-    }
-  }, [shippingAddress, paymentMethod, navigate, userInfo]);
+  // Ajouter des logs pour le débogage
+  console.log("cartItems:", cartItems);
+  console.log("shippingAddress:", shippingAddress);
+  console.log("paymentMethod:", paymentMethod);
 
   const PlaceOrderHandler = async () => {
-    if (cartItems.length === 0) {
-      alert("Votre panier est vide.");
-      return;
-    }
-
-    if (!shippingAddress) {
-      alert("Veuillez fournir une adresse de livraison.");
-      return;
-    }
-
-    if (!paymentMethod) {
-      alert("Veuillez choisir un mode de paiement.");
-      return;
-    }
-
-    const orderData = {
-      orderItems: cartItems,
-      shippingAddress,
-      paymentMethod,
-      itemsPrice,
-      shippingPrice,
-      taxPrice,
-      totalPrice,
-    };
-    console.log("Données de la commande :", orderData);
-
-    setIsLoading(true);
+    const userInfo = localStorage.getItem("userInfo");
+    const userId = userInfo ? userInfo._id : null; // Récupérer l'ID de l'utilisate
     try {
-      const createdOrder = await createOrder(orderData);
-      if (createdOrder) {
-        clearCartItems();
-        navigate(`/order/${createdOrder._id}`);
-      }
+      const res = await createOrder({
+        user: userId,
+        orderItems: cartItems,
+        shippingAddress: {
+          ...shippingAddress, // Utilisation de l'adresse de livraison depuis le ShippingContext
+          isDelivered: false,
+        },
+        paymentMethod: paymentMethod, // Utilisation de la méthode de paiement depuis le PaymentContext
+        itemsPrice: itemsPrice,
+        shippingPrice: shippingPrice,
+        taxPrice: taxPrice,
+        totalPrice: totalPrice,
+      });
+      clearCartItems();
+      navigate(`/order/${res._id}`);
     } catch (error) {
-      console.error("Erreur lors de la création de la commande:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Une erreur est survenue lors de la création de la commande.";
-      alert(errorMessage);
-    } finally {
-      setIsLoading(false);
+      console.error("Failed to place order", error);
+      // Optionnel : Afficher une notification ou message d'erreur à l'utilisateur
+      // toast.error("Failed to place order");
     }
   };
 
+  // Ajoutez une vérification pour vous assurer que shippingAddress est défini
+  if (!shippingAddress || !shippingAddress.address) {
+    return <Message variant="danger">Shipping address is missing.</Message>;
+  }
+
+  // Ajoutez une vérification pour vous assurer que cartItems est défini
+  if (!cartItems) {
+    return <Message variant="danger">Cart items are missing.</Message>;
+  }
+
   return (
     <div>
-      {(isLoading || loading || authLoading) && <Spinner animation="border" />}
-      {error && <Message variant="danger">{error}</Message>}
       <CheckoutSteps step1 step2 step3 step4 />
       <Row>
         <Col md={8}>
           <ListGroup variant="flush">
             <ListGroup.Item>
               <h2>Shipping</h2>
-              {shippingAddress ? (
-                <p>
-                  <strong>Address :</strong> {shippingAddress.address},{" "}
-                  {shippingAddress.city}, {shippingAddress.postalCode},{" "}
-                  {shippingAddress.country}
-                </p>
-              ) : (
-                <Message>No shipping address found.</Message>
-              )}
+              <p>
+                <strong>Address :</strong>
+                {shippingAddress.address}, {shippingAddress.city},{" "}
+                {shippingAddress.postalCode}, {shippingAddress.country}
+              </p>
             </ListGroup.Item>
 
             <ListGroup.Item>
               <h2>Payment Method</h2>
-              <strong>Method: </strong> {paymentMethod}
+              <strong>Method :</strong> {paymentMethod}{" "}
+              {/* Affichage de la méthode de paiement */}
             </ListGroup.Item>
 
             <ListGroup.Item>
@@ -133,7 +104,9 @@ const PlaceOrderScreen = () => {
                           />
                         </Col>
                         <Col>
-                          <Link to={`/product/${item._id}`}>{item.name}</Link>
+                          <Link to={`/products/${item.product}`}>
+                            {item.name}
+                          </Link>
                         </Col>
                         <Col md={4}>
                           {item.qty} x ${item.price} = ${item.qty * item.price}
@@ -154,42 +127,41 @@ const PlaceOrderScreen = () => {
               </ListGroup.Item>
               <ListGroup.Item>
                 <Row>
-                  <Col>Items</Col>
-                  <Col>${itemsPrice.toFixed(2)}</Col>
+                  <Col>Items:</Col>
+                  <Col>${itemsPrice}</Col>
                 </Row>
               </ListGroup.Item>
               <ListGroup.Item>
                 <Row>
-                  <Col>Shipping</Col>
-                  <Col>${shippingPrice.toFixed(2)}</Col>
+                  <Col>Shipping:</Col>
+                  <Col>${shippingPrice}</Col>
                 </Row>
               </ListGroup.Item>
               <ListGroup.Item>
                 <Row>
-                  <Col>Tax</Col>
-                  <Col>${taxPrice.toFixed(2)}</Col>
+                  <Col>Tax:</Col>
+                  <Col>${taxPrice}</Col>
                 </Row>
               </ListGroup.Item>
               <ListGroup.Item>
                 <Row>
-                  <Col>Total</Col>
-                  <Col>${totalPrice.toFixed(2)}</Col>
+                  <Col>Total:</Col>
+                  <Col>${totalPrice}</Col>
                 </Row>
+              </ListGroup.Item>
+              <ListGroup.Item>
+                {error && <Message variant="danger">{error}</Message>}
               </ListGroup.Item>
               <ListGroup.Item>
                 <Button
                   type="button"
                   className="btn-block"
-                  disabled={
-                    cartItems.length === 0 ||
-                    loading ||
-                    isLoading ||
-                    authLoading
-                  }
+                  disabled={cartItems.length === 0}
                   onClick={PlaceOrderHandler}
                 >
                   Place Order
                 </Button>
+                {isLoading && <Loader />}
               </ListGroup.Item>
             </ListGroup>
           </Card>
