@@ -1,22 +1,60 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Row, Col, ListGroup, Image, Card, Button } from "react-bootstrap";
 import Message from "../components/Message";
 import Loader from "../components/Loader";
-import { useOrders } from "../Contexts/OrdersContext"; // Utilisation du contexte Orders
+import { useOrders } from "../Contexts/OrdersContext";
+import { PayPalButtons, usePayPalScriptReducer } from "@paypal/react-paypal-js"; // Importation de PayPal
+import api from "../components/axios";
 
 const OrderScreen = () => {
   const { id: orderId } = useParams();
   const { getOrderDetails, orderDetails, isLoading, error } = useOrders();
+  const [{ isPending }, paypalDispatch] = usePayPalScriptReducer();
+  const [sdkReady, setSdkReady] = useState(false);
 
   useEffect(() => {
-    getOrderDetails(orderId); // Appel à la fonction pour récupérer les détails de la commande
-  }, [orderId, getOrderDetails]);
+    const loadPayPalScript = async () => {
+      try {
+        const { data: clientId } = await api.get("/api/config/paypal");
+        console.log("PayPal Client ID:", clientId);
+        paypalDispatch({
+          type: "resetOptions",
+          value: {
+            "client-id": clientId,
+            currency: "USD",
+          },
+        });
+        setSdkReady(true);
+      } catch (err) {
+        console.error("Erreur lors du chargement de PayPal SDK:", err);
+        // Optionnel: Vous pouvez définir une erreur ici si nécessaire
+      }
+    };
 
-  // Vérification si les détails de la commande existent avant de les afficher
-  // if (isLoading) {
-  //   return <Loader />;
-  // }
+    if (!orderDetails || orderDetails._id !== orderId) {
+      console.log("Fetching order details for ID:", orderId);
+      getOrderDetails(orderId);
+    } else if (!orderDetails.isPaid) {
+      if (!window.paypal) {
+        loadPayPalScript();
+      } else {
+        setSdkReady(true);
+      }
+    }
+  }, [orderDetails, orderId, getOrderDetails, paypalDispatch]);
+
+  const handlePaymentSuccess = (paymentResult) => {
+    console.log("Payment Successful:", paymentResult);
+    // Appeler la fonction pour marquer la commande comme payée dans le backend
+    // updateOrderToPaid(orderId, paymentResult);
+  };
+
+  console.log("Rendering OrderScreen with orderDetails:", orderDetails);
+
+  if (isLoading) {
+    return <Loader />;
+  }
 
   if (error) {
     return <Message variant="danger">{error}</Message>;
@@ -30,14 +68,22 @@ const OrderScreen = () => {
     <Row>
       <Col md={8}>
         <ListGroup variant="flush">
+          {/* Informations de livraison et méthodes de paiement */}
           <ListGroup.Item>
             <h2>Shipping</h2>
             <p>
-              <strong>Address: </strong>
-              {orderDetails.shippingAddress.address},{" "}
-              {orderDetails.shippingAddress.city},{" "}
-              {orderDetails.shippingAddress.postalCode},{" "}
-              {orderDetails.shippingAddress.country}
+              {orderDetails.shippingAddress ? (
+                <>
+                  {orderDetails.shippingAddress.address},{" "}
+                  {orderDetails.shippingAddress.city},{" "}
+                  {orderDetails.shippingAddress.postalCode},{" "}
+                  {orderDetails.shippingAddress.country}
+                </>
+              ) : (
+                <Message variant="danger">
+                  Shipping address not available
+                </Message>
+              )}
             </p>
             {orderDetails.isDelivered ? (
               <Message variant="success">Delivered</Message>
@@ -56,6 +102,7 @@ const OrderScreen = () => {
             )}
           </ListGroup.Item>
 
+          {/* Affichage des articles de la commande */}
           <ListGroup.Item>
             <h2>Order Items</h2>
             {orderDetails.orderItems.length === 0 ? (
@@ -82,6 +129,8 @@ const OrderScreen = () => {
           </ListGroup.Item>
         </ListGroup>
       </Col>
+
+      {/* Résumé de la commande avec bouton PayPal */}
       <Col md={4}>
         <Card>
           <ListGroup variant="flush">
@@ -91,36 +140,60 @@ const OrderScreen = () => {
             <ListGroup.Item>
               <Row>
                 <Col>Items:</Col>
-                <Col>${orderDetails.itemsPrice}</Col>
+                <Col>${orderDetails.itemsPrice.toFixed(2)}</Col>
               </Row>
             </ListGroup.Item>
             <ListGroup.Item>
               <Row>
                 <Col>Shipping:</Col>
-                <Col>${orderDetails.shippingPrice}</Col>
+                <Col>${orderDetails.shippingPrice.toFixed(2)}</Col>
               </Row>
             </ListGroup.Item>
             <ListGroup.Item>
               <Row>
                 <Col>Tax:</Col>
-                <Col>${orderDetails.taxPrice}</Col>
+                <Col>${orderDetails.taxPrice.toFixed(2)}</Col>
               </Row>
             </ListGroup.Item>
             <ListGroup.Item>
               <Row>
                 <Col>Total:</Col>
-                <Col>${orderDetails.totalPrice}</Col>
+                <Col>${orderDetails.totalPrice.toFixed(2)}</Col>
               </Row>
             </ListGroup.Item>
-            <ListGroup.Item>
-              <Button
-                type="button"
-                className="btn-block"
-                disabled={orderDetails.orderItems.length === 0}
-              >
-                Place Order
-              </Button>
-            </ListGroup.Item>
+            {/* Bouton PayPal */}
+            {!orderDetails.isPaid && (
+              <ListGroup.Item>
+                {isPending ? (
+                  <Loader />
+                ) : (
+                  sdkReady && (
+                    <PayPalButtons
+                      createOrder={(data, actions) => {
+                        return actions.order.create({
+                          purchase_units: [
+                            {
+                              amount: {
+                                value: orderDetails.totalPrice.toString(),
+                              },
+                            },
+                          ],
+                        });
+                      }}
+                      onApprove={(data, actions) => {
+                        return actions.order
+                          .capture()
+                          .then(handlePaymentSuccess);
+                      }}
+                      onError={(err) => {
+                        console.error("PayPal Buttons Error:", err);
+                        // Vous pouvez également afficher un Message d'erreur ici
+                      }}
+                    />
+                  )
+                )}
+              </ListGroup.Item>
+            )}
           </ListGroup>
         </Card>
       </Col>

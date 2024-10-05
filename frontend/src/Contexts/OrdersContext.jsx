@@ -36,9 +36,10 @@ export const OrdersProvider = ({ children }) => {
   const getOrderDetails = async (orderId) => {
     try {
       setIsLoading(true);
-      const { data } = await api.get(`${"/orders"}/${orderId}`);
+      const { data } = await api.get(`/orders/${orderId}`);
       setOrderDetails(data);
       setIsLoading(false);
+      
     } catch (error) {
       setIsLoading(false);
       setError(
