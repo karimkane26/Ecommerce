@@ -13,31 +13,71 @@ const OrderScreen = () => {
   const [{ isPending }, paypalDispatch] = usePayPalScriptReducer();
   const [sdkReady, setSdkReady] = useState(false);
 
+  // useEffect(() => {
+  //   const loadPayPalScript = async () => {
+  //     try {
+  //       const { data: clientId } = await api.get("/config/paypal");
+  //       console.log("PayPal Client ID:", clientId);
+  //       paypalDispatch({
+  //         type: "resetOptions",
+  //         value: {
+  //           "client-id": clientId,
+  //           currency: "USD",
+  //         },
+  //       });
+  //       setSdkReady(true);
+  //     } catch (err) {
+  //       console.error("Erreur lors du chargement de PayPal SDK:", err);
+  //       // Optionnel: Vous pouvez définir une erreur ici si nécessaire
+  //     }
+  //   };
+
+  //   if (!orderDetails || orderDetails._id !== orderId) {
+  //     console.log("Fetching order details for ID:", orderId);
+  //     getOrderDetails(orderId);
+  //   } else if (!orderDetails.isPaid) {
+  //     if (!window.paypal) {
+  //       loadPayPalScript();
+  //     } else {
+  //       setSdkReady(true);
+  //     }
+  //   }
+  // }, [orderDetails, orderId, getOrderDetails, paypalDispatch]);
   useEffect(() => {
     const loadPayPalScript = async () => {
       try {
-        const { data: clientId } = await api.get("/api/config/paypal");
-        console.log("PayPal Client ID:", clientId);
-        paypalDispatch({
-          type: "resetOptions",
-          value: {
-            "client-id": clientId,
-            currency: "USD",
-          },
-        });
-        setSdkReady(true);
+        const { data } = await api.get("/config/paypal"); // Appel à l'API pour obtenir le clientId
+        console.log("PayPal API response:", data); // Pour voir ce qui est retourné dans la console
+
+        // Extraire le clientId correctement depuis l'objet retourné
+        const clientId = data.clientId;
+        console.log("Client ID:", clientId); // Pour vérifier s'il est défini
+
+        if (clientId && typeof clientId === "string") {
+          // Charger le SDK PayPal avec un clientId valide
+          paypalDispatch({
+            type: "resetOptions",
+            value: {
+              "client-id": clientId, // Assure-toi de bien passer le clientId ici
+              currency: "USD",
+            },
+          });
+          setSdkReady(true);
+        } else {
+          throw new Error("Invalid PayPal Client ID format");
+        }
       } catch (err) {
         console.error("Erreur lors du chargement de PayPal SDK:", err);
-        // Optionnel: Vous pouvez définir une erreur ici si nécessaire
+        // Optionnel : Gérer l'erreur ici
       }
     };
 
+    // Appel de la fonction de récupération des détails de la commande si nécessaire
     if (!orderDetails || orderDetails._id !== orderId) {
-      console.log("Fetching order details for ID:", orderId);
       getOrderDetails(orderId);
     } else if (!orderDetails.isPaid) {
       if (!window.paypal) {
-        loadPayPalScript();
+        loadPayPalScript(); // Charger le script PayPal si nécessaire
       } else {
         setSdkReady(true);
       }
