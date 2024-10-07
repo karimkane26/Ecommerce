@@ -84,10 +84,20 @@ const OrderScreen = () => {
     }
   }, [orderDetails, orderId, getOrderDetails, paypalDispatch]);
 
+  // Fonction de mise à jour de la commande après un paiement réussi
+  const updateOrderToPaid = async (paymentResult) => {
+    try {
+      const { data } = await api.put(`/orders/${orderId}/pay`, paymentResult);
+      console.log("Order successfully updated:", data);
+      getOrderDetails(orderId); // Recharger les détails de la commande
+    } catch (error) {
+      console.error("Error updating order to paid:", error);
+    }
+  };
   const handlePaymentSuccess = (paymentResult) => {
     console.log("Payment Successful:", paymentResult);
     // Appeler la fonction pour marquer la commande comme payée dans le backend
-    // updateOrderToPaid(orderId, paymentResult);
+    updateOrderToPaid(paymentResult);
   };
 
   console.log("Rendering OrderScreen with orderDetails:", orderDetails);
@@ -136,7 +146,7 @@ const OrderScreen = () => {
             <h2>Payment Method</h2>
             <strong>Method: </strong> {orderDetails.paymentMethod}
             {orderDetails.isPaid ? (
-              <Message variant="success">Paid</Message>
+              <Message variant="success">Paid on {orderDetails.paidAt}</Message>
             ) : (
               <Message variant="danger">Not Paid</Message>
             )}
