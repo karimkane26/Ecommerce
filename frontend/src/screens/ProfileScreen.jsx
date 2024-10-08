@@ -37,7 +37,7 @@ const ProfileScreen = () => {
         setLoadingUpdateProfile(true);
         // Requête PUT pour mettre à jour le profil
         const { data } = await api.put(
-          "/api/users/profile",
+          "/users/profile",
           { name, email, password },
           {
             headers: {
