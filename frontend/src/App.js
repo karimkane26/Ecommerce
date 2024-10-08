@@ -47,6 +47,7 @@ import { ShippingProvider } from "./Contexts/ShippingContext";
 import { PaymentProvider } from "./Contexts/PaymentContext";
 import { OrdersProvider } from "./Contexts/OrdersContext";
 import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer } from "react-toastify";
 
 const App = () => {
   return (
@@ -63,6 +64,7 @@ const App = () => {
                   </Container>
                 </main>
                 <Footer />
+                <ToastContainer />
               </OrdersProvider>
             </PaymentProvider>
           </ShippingProvider>

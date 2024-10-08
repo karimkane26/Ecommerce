@@ -12,7 +12,7 @@ export const OrdersProvider = ({ children }) => {
   const [orderDetails, setOrderDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-
+  const [orders, setOrders] = useState([]);
   // Créer une nouvelle commande
   const createOrder = async (order) => {
     try {
@@ -39,7 +39,6 @@ export const OrdersProvider = ({ children }) => {
       const { data } = await api.get(`/orders/${orderId}`);
       setOrderDetails(data);
       setIsLoading(false);
-      
     } catch (error) {
       setIsLoading(false);
       setError(
@@ -50,10 +49,33 @@ export const OrdersProvider = ({ children }) => {
       toast.error(error.message);
     }
   };
-
+  const getMyOrders = async () => {
+    try {
+      setIsLoading(true);
+      const { data } = await api.get("/orders/mine"); // Assurez-vous que cette route existe dans votre backend
+      setOrders(data);
+      setIsLoading(false);
+    } catch (error) {
+      setIsLoading(false);
+      setError(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+      toast.error(error.message);
+    }
+  };
   return (
     <OrdersContext.Provider
-      value={{ createOrder, getOrderDetails, orderDetails, isLoading, error }}
+      value={{
+        createOrder,
+        getOrderDetails,
+        getMyOrders,
+        orders,
+        orderDetails,
+        isLoading,
+        error,
+      }}
     >
       {children}
     </OrdersContext.Provider>
