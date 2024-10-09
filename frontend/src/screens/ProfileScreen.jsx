@@ -45,7 +45,6 @@ const ProfileScreen = () => {
             },
           }
         );
-
         setCredentials(data); // Mettre à jour le contexte Auth avec les nouvelles infos
         toast.success("Profil mis à jour avec succès");
       } finally {

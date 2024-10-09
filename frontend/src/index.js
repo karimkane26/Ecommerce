@@ -21,6 +21,9 @@ import OrderScreen from './screens/OrderScreen';
 import {PayPalScriptProvider} from '@paypal/react-paypal-js';
 import RegisterScreen from './screens/RegisterScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import AdminRoute from './components/AdminRoute';
+import PrivateRoute from './components/PrivateRoute';
+import OrderListScreen from './screens/admin/OrderListScreen';
 // import PlaceOrderScreen from './screens/PlaceOrderScreen';
 // import OrderScreen from './screens/OrderScreen';
 const router = createBrowserRouter(
@@ -31,15 +34,23 @@ const router = createBrowserRouter(
     <Route path='/register' element={<RegisterScreen />}/>
     <Route path='cart' element={<CartScreen />} />
     <Route  path='/login' element={<LoginScreen />}/>
-    <Route  path='/shipping' element={<ShippingScreen />}/>
+    
+  <Route path='' element={<PrivateRoute />}>
+      <Route  path='/shipping' element={<ShippingScreen />}/>
     <Route  path='/payment' element={<PaymentScreen />}/>
     <Route  path='/placeorder' element={<PlaceOrderScreen />}/>
     <Route  path='order/:id' element={ <OrderScreen />}/>
     <Route  path='profile' element={<ProfileScreen />}/>
-    {/* <Route  path='/order/:id' element={<OrderScreen />}/> */}
-    
+
+  </Route>
+  
+  <Route path='' element={<AdminRoute />}>
+    <Route path='/admin/orderlist' element={OrderListScreen} />
+  </Route>
 
     </Route>
+
+    
   )
 )
 const root = ReactDOM.createRoot(document.getElementById('root'));
