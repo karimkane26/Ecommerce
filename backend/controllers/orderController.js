@@ -57,7 +57,7 @@ const getOrderById = asyncHandler(async(req, res)=> {
   }
   else{
     res.status(404);
-    throw new('Order not found')
+    throw new Error('Order not found')
   }
 });
 
@@ -100,8 +100,8 @@ const updateOrderToDelivered = asyncHandler(async(req, res)=> {
 // @route GET /api/orders
 // access Private/Admin
 const getOrders = asyncHandler(async(req, res)=> {
-  res.send('get all orders');
-  // throw new Error('Some error');
+  const orders = await Order.find({}).populate('user','id name');
+  res.status(200).json(orders)
 });
 
 export{

@@ -31,6 +31,17 @@ export const OrdersProvider = ({ children }) => {
       throw error;
     }
   };
+  const getAllOrders = async () => {
+    try {
+      setIsLoading(true);
+      const { data } = await api.get("/orders"); // Assurez-vous que cette route est correcte
+      setOrders(data); // Met à jour les commandes dans l'état
+      setIsLoading(false);
+    } catch (error) {
+      setIsLoading(false);
+      setError(error.response?.data?.message || error.message);
+    }
+  };
 
   // Récupérer les détails d'une commande par son ID
   const getOrderDetails = async (orderId) => {
@@ -71,6 +82,7 @@ export const OrdersProvider = ({ children }) => {
         createOrder,
         getOrderDetails,
         getMyOrders,
+        getAllOrders,
         orders,
         orderDetails,
         isLoading,
