@@ -76,6 +76,24 @@ export const OrdersProvider = ({ children }) => {
       toast.error(error.message);
     }
   };
+  const updateOrderToDelivered = async (orderId) => {
+    try {
+      setIsLoading(true);
+      const { data } = await api.put(`/orders/${orderId}/deliver`);
+      setOrderDetails(data);
+      setIsLoading(false);
+      toast.success("Order marked as delivered successfully!");
+      return data;
+    } catch (error) {
+      setIsLoading(false);
+      setError(
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message
+      );
+      toast.error(error.message);
+    }
+  };
   return (
     <OrdersContext.Provider
       value={{
@@ -83,6 +101,7 @@ export const OrdersProvider = ({ children }) => {
         getOrderDetails,
         getMyOrders,
         getAllOrders,
+        updateOrderToDelivered,
         orders,
         orderDetails,
         isLoading,
