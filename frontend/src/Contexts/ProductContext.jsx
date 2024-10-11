@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState,} from 'react';
 import axios from 'axios';
 import {PRODUCT_URL} from "../constants.js";
 // Créer le contexte
