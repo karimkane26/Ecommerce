@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "description": "ecommerce",
   "type": "module",
-  "main": "server.js",
+  "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",
     "server": "nodemon backend/server.js",
