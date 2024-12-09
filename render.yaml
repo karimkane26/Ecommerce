@@ -3,22 +3,22 @@ services:
     name: ecommerce
     env: node
     buildCommand: npm run build
-    startCommand: npm start
+    startCommand: cd backend && npm start # Assurez-vous que cette ligne est correcte
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 5000
       - key: MONGO_URI
-        value:mongodb+srv://lucidev97:passer123@jayma.vctqz.mongodb.net/test?retryWrites=true&w=majority&appName=Jayma
+        value: mongodb+srv://lucidev97:passer123@jayma.vctqz.mongodb.net/test?retryWrites=true&w=majority&appName=Jayma
       - key: JWT_SECRET
         value: abc123
-      - key: ARHl1krwWhXNUO32GDSBZrEm9oxo9lG5sMaSnRiQh22vy6JTB82g9v25981FFk9BfqM_cxvrqsolHbhE
+      - key: PAYPAL_CLIENT_ID
         value: your_paypal_client_id
-    region: oregon # Vous pouvez choisir une autre région si nécessaire
+    region: oregon
     plan: free
     disk:
       name: persistent_data
-      sizeGB: 1 # Augmentez si nécessaire
+      sizeGB: 1
     healthCheckPath: /
     autoDeploy: true
