@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: ecommerce
+    env: node
+    buildCommand: npm run build
+    startCommand: npm start # Assurez-vous que cette ligne est correcte
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGO_URI
+        value: mongodb+srv://lucidev97:passer123@jayma.vctqz.mongodb.net/test?retryWrites=true&w=majority&appName=Jayma
+      - key: JWT_SECRET
+        value: abc123
+      - key: PAYPAL_CLIENT_ID
+        value: ARHl1krwWhXNUO32GDSBZrEm9oxo9lG5sMaSnRiQh22vy6JTB82g9v25981FFk9BfqM_cxvrqsolHbhE
+    region: oregon
+    plan: free
+    disk:
+      name: persistent_data
+      sizeGB: 1
+    healthCheckPath: /
+    autoDeploy: true
